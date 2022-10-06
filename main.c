@@ -11,12 +11,29 @@
 int main() {
 
     // open studentlog database
-    sqlite3 *database;
-    int exit = sqlite3_open("studentlog.db", &database);
-    if (exit) {
-        printf("Error opening database. Exiting...");
-        return -1;
+    // if it does not exist, create database and tables
+    sqlite3 *test, *database;
+    int db_status = sqlite3_open_v2("studentlog.db", &test, SQLITE_OPEN_READONLY, "unix-none");
+    sqlite3_close_v2(test);
+    sqlite3_open("studentlog.db", &database);
+    if (db_status != 0) {
+        char *query = "CREATE TABLE student_base (\n\
+            student_id INTEGER PRIMARY KEY,\n\
+            name TEXT,\n\
+            instrument TEXT,\n\
+            day INTEGER,\n\
+            time TEXT,\n\
+            start_date TEXT,\n\
+            end_date TEXT);\n\
+            CREATE TABLE assignments (\n\
+            assignment_id INTEGER PRIMARY KEY,\n\
+            date TEXT,\n\
+            name TEXT,\n\
+            assignment TEXT);";
+        char *err_msg;
+        sqlite3_exec(database, query, callback_students, 0, &err_msg);
     }
+
     // PROGRAM LOOP
     while (1) {
 
