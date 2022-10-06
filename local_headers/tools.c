@@ -56,7 +56,7 @@ void destroy_array() {
 }
 
 int initial_menu(sqlite3 *database, int *day) {
-    system("cls");
+    system("clear");
     printf("Student Log version 4.0\n----------------------\n");
     printf("1 - Tuesday\n"\
             "2 - Wednesday\n"\
@@ -98,7 +98,7 @@ int initial_menu(sqlite3 *database, int *day) {
 
 // returns student choice
 int main_menu(sqlite3 *database, int *day) {
-    system("cls");
+    system("clear");
     char *days[] = {
         "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"
     };
@@ -149,7 +149,7 @@ int main_menu(sqlite3 *database, int *day) {
 }
 
 int student_menu(sqlite3 *database, int choice) {
-    system("cls");
+    system("clear");
     int index, count;
     for (index = 0, count = 0; index < 21; index++) {
         if (students[index]) count++;
@@ -211,12 +211,12 @@ int student_menu(sqlite3 *database, int choice) {
                 free(query);
                 printf("Press ENTER to return.\n\n");
                 clear_stdin();
-                system("cls");
+                system("clear");
                 break;
             case 'R':
                 return 0;
             default:
-                system("cls");
+                system("clear");
                 printf("Incorrect input. Try again.\n");
         }
     }
@@ -266,7 +266,7 @@ int add_student(sqlite3 *database, int day) {
                    "FROM student_base WHERE name = \"%s\";", name);
     sqlite3_exec(database, query, callback_students, students, &err_msg);
     free(query);
-    system("cls");
+    system("clear");
     return 0;
 }
 
@@ -309,6 +309,6 @@ int delete_student(sqlite3 *database) {
     }
     sqlite3_exec(database, query, callback_students, 0, &err_msg);
     free(query);
-    system("cls");
+    system("clear");
     return 0;
 }

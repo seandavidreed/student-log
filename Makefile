@@ -13,6 +13,6 @@ tools.o: local_headers/tools.h local_headers/tools.c
 	$(CC) $(CFLAGS) -c local_headers/tools.c
 
 studentlog: sqlite3.o in_out.o tools.o main.c
-	$(CC) $(CFLAGS) -o studentlog main.c local_headers/sqlite3.c local_headers/in_out.c local_headers/tools.c
+	$(CC) $(CFLAGS) -o studentlog main.c local_headers/sqlite3.c local_headers/in_out.c local_headers/tools.c -ldl -lpthread -lm
 
 	rm in_out.o tools.o

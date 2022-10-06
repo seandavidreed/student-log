@@ -23,7 +23,7 @@ int main() {
         // initial menu: select day of the week and retrieve students from database
         int day;
         initial_menu(database, &day);
-        system("cls");
+        system("clear");
         
         while (1) {
             // main menu: display students based on weekday
