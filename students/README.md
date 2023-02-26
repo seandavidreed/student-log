@@ -1,0 +1,1 @@
+This folder stores a .txt file for each individual student. It will continue to store students that have been removed from the roster. To change where student files are stored, edit the preprocessor directive PATH in logtools.c.
