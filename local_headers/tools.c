@@ -10,6 +10,14 @@
 
 student *students[21] = {NULL};
 
+const char* const time[21] = {
+    "10:00am", "10:30am", "11:00am", "11:30am", "12:00pm", "12:30pm", "1:00pm", 
+    "1:30pm", "2:00pm", "2:30pm", "3:00pm", "3:30pm", "4:00pm", "4:30pm", 
+    "5:00pm", "5:30pm", "6:00pm", "6:30pm", "7:00pm", "7:30pm", "8:00pm", 
+};
+
+const char* const instrument[3] = {"Guitar", "Ukulele", "Bass"};
+
 int callback_students(void *not_used, int count, char **data, char **columns) {
     student *temp = (student *)malloc(sizeof(student));
     strcpy(temp->name, data[0]);
@@ -36,14 +44,21 @@ int callback_archive(void *not_used, int count, char **data, char **columns) {
 }
 
 int time_hash(char *t) {
-    char *time[21] = {
-        "10:00am", "10:30am", "11:00am", "11:30am", "12:00pm", "12:30pm", "1:00pm", 
-        "1:30pm", "2:00pm", "2:30pm", "3:00pm", "3:30pm", "4:00pm", "4:30pm", 
-        "5:00pm", "5:30pm", "6:00pm", "6:30pm", "7:00pm", "7:30pm", "8:00pm", 
-    };
     for (int i = 0; i < 21; i++) {
         if (strcmp(t, time[i]) == 0) return i;
     }
+}
+
+unsigned int get_time() {
+    int time_choice;
+
+    for (int i = 0; i < 21; i++) {
+        printf("%d - %s\n", i + 1, time[i]);
+    }
+    printf("Select Time: ");
+    scanf("%d", &time_choice);
+
+    return time_choice;
 }
 
 void destroy_array() {
@@ -177,6 +192,7 @@ int student_menu(sqlite3 *database, int choice) {
 
         printf("A - ASSIGN\n");
         printf("V - VIEW ALL ASSIGNMENTS\n");
+        printf("E - EDIT PROFILE\n");
         printf("R - RETURN\n");
         printf("Enter Selection: ");
 
@@ -200,6 +216,9 @@ int student_menu(sqlite3 *database, int choice) {
                 sqlite3_exec(database, query, callback_assignments, 0, &err_msg);
                 free(query);
                 return 0;
+            case 'E':
+                edit_student(database, students[index]->name);
+                break;
             case 'V': // consider using the full method of preparing statements here, not the exec convenience wrapper
                 query = (char *)malloc(110 * sizeof(char));
                 sprintf(query, "SELECT date, assignment FROM assignments "\
@@ -225,14 +244,9 @@ int student_menu(sqlite3 *database, int choice) {
 int add_student(sqlite3 *database, int day) {
     // declare all necessary variables
     char *err_msg = 0;
-    int inst_choice, time_choice;
+    int inst_choice;
     char name[30]; 
-    char *instrument[3] = {"Guitar", "Ukulele", "Bass"};
-    char *time[21] = {
-        "10:00am", "10:30am", "11:00am", "11:30am", "12:00pm", "12:30pm", "1:00pm", 
-        "1:30pm", "2:00pm", "2:30pm", "3:00pm", "3:30pm", "4:00pm", "4:30pm", 
-        "5:00pm", "5:30pm", "6:00pm", "6:30pm", "7:00pm", "7:30pm", "8:00pm", 
-    };
+
     // get student name
     printf("Enter Name (C to Cancel): ");
     int len = get_text(name, 30);
@@ -246,11 +260,7 @@ int add_student(sqlite3 *database, int day) {
     scanf("%d", &inst_choice);
 
     // get time of lesson
-    for (int i = 0; i < 21; i++) {
-        printf("%d - %s\n", i + 1, time[i]);
-    }
-    printf("Select Time: ");
-    scanf("%d", &time_choice);
+    int time_choice = get_time();
 
     // allocate memory for sql query, create and execute statement, and free sql query 
     char *query = (char *)malloc(300 * sizeof(char));
@@ -268,6 +278,53 @@ int add_student(sqlite3 *database, int day) {
     free(query);
     system("clear");
     return 0;
+}
+
+int edit_student(sqlite3 *database, char *name) {
+    char *err_msg = 0;
+    char query[300];
+
+    printf("N - NAME\n");
+    printf("T - TIME\n");
+    printf("I - INSTRUMENT\n");
+    printf("R - RETURN\n");
+    printf("Enter Selection: ");
+
+    char choice;
+    scanf(" %c", &choice);
+    clear_stdin();
+    choice = toupper(choice);
+
+    switch (choice) {
+        case 'N':
+            char new_name[30];
+            printf("Enter New Name: ");
+            get_text(new_name, 30);
+            sprintf(query, "UPDATE student_base SET name = \"%s\" WHERE name = \"%s\";", new_name, name);
+            sqlite3_exec(database, query, callback_students, 0, &err_msg);
+            break;
+        case 'T':
+            int time_choice = get_time();
+            sprintf(query, "UPDATE student_base SET time = \"%s\" WHERE name = \"%s\";", time[time_choice - 1], name);
+            sqlite3_exec(database, query, callback_students, 0, &err_msg);
+            break;
+        case 'I':
+            printf("1 - Guitar\n2 - Ukulele\n3 - Bass\n"\
+                   "Select Instrument: ");
+            int inst_choice;
+            scanf("%d", &inst_choice);
+            sprintf(query, "UPDATE student_base SET instrument = \"%s\" WHERE name = \"%s\";", instrument[inst_choice - 1], name);
+            sqlite3_exec(database, query, callback_students, 0, &err_msg);
+            break;
+        case 'R':
+            return 0;
+        default:
+            system("clear");
+            printf("Incorrect input. Try again.\n");
+    }
+
+    return 0;
+
 }
 
 int delete_student(sqlite3 *database) {

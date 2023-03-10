@@ -10,6 +10,8 @@ typedef struct _student {
 } student;
 
 extern student *students[21];
+extern const char* const time[21];
+extern const char* const instrument[3];
 
 int callback_students(void *not_used, int count, char **data, char **columns);
 int callback_assignments(void *not_used, int count, char **data, char **columns);
@@ -23,6 +25,7 @@ int main_menu(sqlite3 *database, int *day);
 int student_menu(sqlite3 *database, int index);
 
 int add_student(sqlite3 *database, int day);
+int edit_student(sqlite3 *database, char *name);
 int delete_student(sqlite3 *database);
 
 int str_to_int(char *number);
