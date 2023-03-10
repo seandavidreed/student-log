@@ -6,7 +6,9 @@
 #include "in_out.h"
 #include "tools.h"
 
-// Don't forget to change the system() argument depending on what shell you use!
+// Uncomment according to OS compilation target
+#define SYS_CLR() system("clear") // Linux
+//#define SYS_CLR() system("cls") // Windows
 
 student *students[21] = {NULL};
 
@@ -71,7 +73,7 @@ void destroy_array() {
 }
 
 int initial_menu(sqlite3 *database, int *day) {
-    system("clear");
+    SYS_CLR();
     printf("Student Log version 4.0\n----------------------\n");
     printf("1 - Tuesday\n"\
             "2 - Wednesday\n"\
@@ -85,7 +87,6 @@ int initial_menu(sqlite3 *database, int *day) {
         scanf(" %c", &c);
         clear_stdin();
         int n = (int)(c - '0');
-        char *query;
         switch (n) {
             case 21:
             case 53:
@@ -93,13 +94,12 @@ int initial_menu(sqlite3 *database, int *day) {
                 sqlite3_close(database);
                 exit(0);
             case 1 ... 5:
-                query = (char *)malloc(100 * sizeof(char));
+                char query[100];
                 *day = n + 1;
                 sprintf(query, "SELECT name, start_date, instrument, time FROM student_base "\
                                "WHERE day = %d ORDER BY time ASC;", *day);
                 char *err_msg = 0;
                 int rc = sqlite3_exec(database, query, callback_students, students, &err_msg);
-                free(query);
                 return 0;
             case 0:
                 sqlite3_exec(database, "SELECT name, start_date, end_date, instrument FROM student_base "\
@@ -113,7 +113,7 @@ int initial_menu(sqlite3 *database, int *day) {
 
 // returns student choice
 int main_menu(sqlite3 *database, int *day) {
-    system("clear");
+    SYS_CLR();
     char *days[] = {
         "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"
     };
@@ -164,7 +164,7 @@ int main_menu(sqlite3 *database, int *day) {
 }
 
 int student_menu(sqlite3 *database, int choice) {
-    system("clear");
+    SYS_CLR();
     int index, count;
     for (index = 0, count = 0; index < 21; index++) {
         if (students[index]) count++;
@@ -230,12 +230,12 @@ int student_menu(sqlite3 *database, int choice) {
                 free(query);
                 printf("Press ENTER to return.\n\n");
                 clear_stdin();
-                system("clear");
+                SYS_CLR();
                 break;
             case 'R':
                 return 0;
             default:
-                system("clear");
+                SYS_CLR();
                 printf("Incorrect input. Try again.\n");
         }
     }
@@ -246,6 +246,7 @@ int add_student(sqlite3 *database, int day) {
     char *err_msg = 0;
     int inst_choice;
     char name[30]; 
+    char query[300];
 
     // get student name
     printf("Enter Name (C to Cancel): ");
@@ -262,28 +263,26 @@ int add_student(sqlite3 *database, int day) {
     // get time of lesson
     int time_choice = get_time();
 
-    // allocate memory for sql query, create and execute statement, and free sql query 
-    char *query = (char *)malloc(300 * sizeof(char));
+    // create and execute query
     sprintf(query, "INSERT INTO student_base (name, instrument, day, time, start_date)\
                     VALUES (\"%s\", \"%s\", \"%d\", \"%s\", date(\"now\", \"localtime\"));", 
                     name, instrument[inst_choice - 1], day, time[time_choice - 1]);
     sqlite3_exec(database, query, callback_students, 0, &err_msg);
-    free(query);
 
     // insert student into students array
-    query = (char *)malloc(120 * sizeof(char));
     sprintf(query, "SELECT name, start_date, instrument, time "\
                    "FROM student_base WHERE name = \"%s\";", name);
     sqlite3_exec(database, query, callback_students, students, &err_msg);
-    free(query);
-    system("clear");
+    SYS_CLR();
     return 0;
 }
 
 int edit_student(sqlite3 *database, char *name) {
+    SYS_CLR();
     char *err_msg = 0;
     char query[300];
 
+    printf("Editing %s\n----------------------\n", name);
     printf("N - NAME\n");
     printf("T - TIME\n");
     printf("I - INSTRUMENT\n");
@@ -319,7 +318,7 @@ int edit_student(sqlite3 *database, char *name) {
         case 'R':
             return 0;
         default:
-            system("clear");
+            SYS_CLR();
             printf("Incorrect input. Try again.\n");
     }
 
@@ -328,6 +327,7 @@ int edit_student(sqlite3 *database, char *name) {
 }
 
 int delete_student(sqlite3 *database) {
+    char query[120];
     char *err_msg = 0;
     char name[30];
     printf("Enter Name (C to Cancel): ");
@@ -336,7 +336,6 @@ int delete_student(sqlite3 *database) {
     // if user wants to cancel operation
     if (toupper(name[0]) == 'C' && len == 1) return 0;
 
-    char *query = (char *)malloc(120 * sizeof(char));
     if (name[0] == '-' && name[1] == 'd') { // if user wants to permanently delete the student
         char temp[30];
         strcpy(temp, &name[3]);
@@ -365,7 +364,6 @@ int delete_student(sqlite3 *database) {
         }
     }
     sqlite3_exec(database, query, callback_students, 0, &err_msg);
-    free(query);
-    system("clear");
+    SYS_CLR();
     return 0;
 }
