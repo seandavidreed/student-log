@@ -120,7 +120,8 @@ int initial_menu(sqlite3 *database, int *day) {
             case 6:
                 sqlite3_exec(
                     database, 
-                    "SELECT name, start_date, instrument, time FROM student_base ORDER BY day ASC, time ASC;",
+                    "SELECT name, start_date, instrument, time FROM student_base \
+                    WHERE day BETWEEN 2 AND 6 ORDER BY day ASC, time ASC;",
                     callback_allstudents,
                     all_students,
                     &err_msg
