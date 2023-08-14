@@ -11,6 +11,10 @@
 //#define SYS_CLR() system("cls") // Windows
 
 student *students[21] = {NULL};
+student *all_students[105] = {NULL};
+char *assignments[105] = {NULL};
+int val = 0;
+int *ptr = &val;
 
 const char* const time[21] = {
     "10:00am", "10:30am", "11:00am", "11:30am", "12:00pm", "12:30pm", "1:00pm", 
@@ -27,6 +31,17 @@ int callback_students(void *not_used, int count, char **data, char **columns) {
     strcpy(temp->instrument, data[2]);
     strcpy(temp->time, data[3]);
     students[time_hash(temp->time)] = temp;
+    return 0;
+}
+
+int callback_allstudents(void *not_used, int count, char **data, char **columns) {
+    student *temp = (student *)malloc(sizeof(student));
+    strcpy(temp->name, data[0]);
+    strcpy(temp->start_date, data[1]);
+    strcpy(temp->instrument, data[2]);
+    strcpy(temp->time, data[3]);
+    all_students[*ptr] = temp;
+    (*ptr)++;
     return 0;
 }
 
@@ -75,13 +90,15 @@ void destroy_array() {
 int initial_menu(sqlite3 *database, int *day) {
     SYS_CLR();
     printf("Student Log version 4.0\n----------------------\n");
-    printf("1 - Tuesday\n"\
-            "2 - Wednesday\n"\
-            "3 - Thursday\n"\
-            "4 - Friday\n"\
+    printf("1 - Tuesday\n"
+            "2 - Wednesday\n"
+            "3 - Thursday\n"
+            "4 - Friday\n"
             "5 - Saturday\n"
+            "6 - Display All Students\n"
             "E - EXIT\n");
     char c;
+    char *err_msg = 0;
     while (1) {
         printf("Enter Selection: ");
         scanf(" %c", &c);
@@ -98,9 +115,30 @@ int initial_menu(sqlite3 *database, int *day) {
                 *day = n + 1;
                 sprintf(query, "SELECT name, start_date, instrument, time FROM student_base "\
                                "WHERE day = %d ORDER BY time ASC;", *day);
-                char *err_msg = 0;
                 int rc = sqlite3_exec(database, query, callback_students, students, &err_msg);
                 return 0;
+            case 6:
+                sqlite3_exec(
+                    database, 
+                    "SELECT name, start_date, instrument, time FROM student_base ORDER BY day ASC, time ASC;",
+                    callback_allstudents,
+                    all_students,
+                    &err_msg
+                );
+                int i = 0;
+                while (all_students[i]) {
+                    printf("%d - %s\n", i + 1, all_students[i]->name);
+                    char *new_query = (char *)malloc(150 * sizeof(char));
+                    sprintf(new_query, "SELECT date, assignment FROM assignments "\
+                                "WHERE assignment_id = (SELECT MAX(assignment_id) FROM assignments WHERE "\
+                                "name = '%s');", all_students[i]->name);
+                    printf("Latest Assignment:\n");
+                    sqlite3_exec(database, new_query, callback_assignments, 0, &err_msg);
+                    free(new_query);
+                    i++;
+                }
+                *ptr = 0;
+                break;
             case 0:
                 sqlite3_exec(database, "SELECT name, start_date, end_date, instrument FROM student_base "\
                                        "WHERE day = -1 ORDER BY name ASC;", callback_archive, 0, &err_msg);
@@ -284,6 +322,7 @@ int edit_student(sqlite3 *database, char *name) {
 
     printf("Editing %s\n----------------------\n", name);
     printf("N - NAME\n");
+    printf("D - DAY\n");    
     printf("T - TIME\n");
     printf("I - INSTRUMENT\n");
     printf("R - RETURN\n");
@@ -302,6 +341,34 @@ int edit_student(sqlite3 *database, char *name) {
             sprintf(query, "UPDATE student_base SET name = \"%s\" WHERE name = \"%s\";", new_name, name);
             sqlite3_exec(database, query, callback_students, 0, &err_msg);
             break;
+        case 'D':
+            printf("1 - Tuesday\n"\
+            "2 - Wednesday\n"\
+            "3 - Thursday\n"\
+            "4 - Friday\n"\
+            "5 - Saturday\n"
+            "R - RETURN\n");
+            char c;
+            unsigned int success = 0;
+            while (1) {
+                printf("Enter Selection: ");
+                scanf(" %c", &c);
+                clear_stdin();
+                int n = (int)(c - '0');
+                switch (n) {
+                    case 34:
+                    case 66:
+                        return 0;
+                    case 1 ... 5:
+                        sprintf(query, "UPDATE student_base SET day = %d WHERE name = \"%s\";", n + 1, name);
+                        sqlite3_exec(database, query, callback_students, 0, &err_msg);
+                        success = 1;
+                        break;
+                    default:
+                        printf("Incorrect input. Try again.\n");
+                }
+                if (success == 1) break;
+            }
         case 'T':
             int time_choice = get_time();
             sprintf(query, "UPDATE student_base SET time = \"%s\" WHERE name = \"%s\";", time[time_choice - 1], name);
